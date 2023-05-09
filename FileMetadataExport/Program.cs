@@ -18,71 +18,25 @@ namespace FileMetadataExport
         static void Main(string[] args)
         {
 
-            //Use argument -l or --list to display all available property names for a file
-            if (args[0] == "-l" || args[0] == "--list")
+            ParsedArgs parsedArgs = ParsedArgs.parseArgs(args);
+
+            if(parsedArgs == null)
             {
-                if (args.Length == 2)
-                {
-                    var filePath = args[1].TrimStart('"').TrimEnd('"');
-                    if (File.Exists(filePath))
-                    {
-                        FileInfo file = new FileInfo(filePath);
-                        DisplayFileProperties(file.FullName);
-                    }
-                    else
-                    {
-                        Console.WriteLine(filePath + " is not a valid file. Please specify a valid file path.");
-                    }
-                    Console.ReadLine();
-                    return;
-                }
-                else
-                {
-                    Console.WriteLine("Must provide a single valid file path");
-                    Console.ReadLine();
-                    return;
-                }
+                Console.Read();
+                return;
             }
-            //Use argument -p or --params to provide a directory and a list of parameter names and output a list of all files and the respective parameter values in pipe delimited format.
-            else if (args[0] == "-p" || args[0] == "--params")
+
+            if (parsedArgs.List)
             {
-
-                if (args.Length >= 3)
-                {
-                    var path = args[1].TrimStart('"').TrimEnd('"');
-                    if (Directory.Exists(path))
-                    {
-                        var extIndex = Array.FindIndex(args, s => s == "-e");
-                        var numParams = args.Length - 2;
-                        var extensions = "";
-
-                        if (extIndex != -1)
-                        {
-                            numParams = extIndex - 2;
-                            if (args.Length > extIndex + 1)
-                                extensions = args[extIndex + 1];
-                        }
-
-                        string[] paramStrings = new string[numParams];
-                        Array.Copy(args, 2, paramStrings, 0, numParams);
-                        DisplaySelectedProperties(path, paramStrings, extensions);
-                        return;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Please provide a valid path");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Please provide a valid path and list of parameters to display");
-                    return;
-                }
+                FileInfo file = new FileInfo(parsedArgs.FileName);
+                DisplayFileProperties(file.FullName);
+                Console.Read();
+                return;
             }
             else
             {
-                Console.WriteLine("Please provide a valid command switch");
-                Console.ReadLine();
+                DisplaySelectedProperties(parsedArgs.Path, parsedArgs.ParamStrings, parsedArgs.Extensions);
+                Console.Read();
                 return;
             }
 
@@ -104,10 +58,10 @@ namespace FileMetadataExport
 
         }
 
-        static void DisplaySelectedProperties(string path, string[] paramStrings, string extensions)
+        static void DisplaySelectedProperties(string path, string[] paramStrings, string[] extensions)
         {
             DirectoryInfo dir = new DirectoryInfo(path);
-            IEnumerable<FileInfo> files = dir.GetFiles().Where(f => extensions.Contains(f.Extension) || extensions == "");
+            IEnumerable<FileInfo> files = dir.GetFiles("*.*", SearchOption.AllDirectories).Where(f => extensions.Contains(f.Extension));
 
             Console.Write("File Name");
 
@@ -144,4 +98,5 @@ namespace FileMetadataExport
         }
 
     }
+
 }
